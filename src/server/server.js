@@ -28,12 +28,18 @@ const handleProviderEvent = (event) => {
 io.on('connection', (socket) => {
   console.log('Frontend conectado:', socket.id);
 
-  // Conectamos el proveedor y le pasamos el manejador de eventos.
-  ProviderManager.connectProvider(
-    'twitch',
-    { channel: '#YOUR_TWITCH_CHANNEL' }, // ¡RECUERDA CAMBIAR ESTO!
-    handleProviderEvent
-  );
+  // Escuchar el evento 'channel:connect' que viene del frontend
+  socket.on('channel:connect', (data) => {
+    const { channel } = data;
+    console.log(`Petición para conectar al canal: ${channel}`);
+    
+    // Conectamos el proveedor y le pasamos el manejador de eventos.
+    ProviderManager.connectProvider(
+      'twitch',
+      { channel },
+      handleProviderEvent
+    );
+  });
 
   socket.on('disconnect', () => {
     console.log('Frontend desconectado:', socket.id);
