@@ -1,6 +1,6 @@
 import { readdir } from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,7 +18,9 @@ class ProviderManager {
       if (dir.isDirectory()) {
         const providerName = dir.name;
         try {
-          const providerModule = await import(path.join(providersPath, providerName, 'index.js'));
+          const modulePath = path.join(providersPath, providerName, 'index.js');
+          const moduleUrl = pathToFileURL(modulePath).href;
+          const providerModule = await import(moduleUrl);
           this.providers[providerName] = providerModule.default;
           console.log(`Módulo '${providerName}' cargado exitosamente.`);
         } catch (error) {
