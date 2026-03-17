@@ -1,0 +1,28 @@
+{
+  "name": "chattering",
+  "version": "0.1.0",
+  "description": "Unified chat for Twitch, TikTok, and YouTube streamers.",
+  "main": "src/main/main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "chat",
+    "streamer",
+    "twitch",
+    "tiktok",
+    "youtube"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "tmi.js": "^1.8.5"
+  },
+  "devDependencies": {
+    "electron": "^31.0.1"
+  }
+}

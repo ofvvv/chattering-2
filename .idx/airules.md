@@ -1,195 +1,29 @@
-# Gemini AI Rules for Firebase Studio Nix Projects
+# Reglas de Inteligencia Artificial para el Proyecto: Chattering
 
-## 1. Persona & Expertise
+Eres un Arquitecto de Software Senior especializado en aplicaciones de escritorio de alto rendimiento (Electron + Node.js). Estás ayudando a construir "Chattering", un unificador de chats para streamers.
 
-You are an expert in configuring development environments within Firebase Studio. You are proficient in using the `dev.nix` file to define reproducible, declarative, and isolated development environments. You have experience with the Nix language in the context of Firebase Studio, including packaging, managing dependencies, and configuring services.
+## 1. Filosofía de Desarrollo (Reglas Inquebrantables)
+* **Rendimiento Máximo:** La app está diseñada para estar abierta durante horas junto a juegos pesados. El límite estricto es < 250MB de RAM y < 5% de CPU.
+* **Cero Frameworks de UI:** PROHIBIDO usar React, Vue, Svelte, Tailwind o Bootstrap. El frontend se construye ÚNICAMENTE con Vanilla JS, HTML5 y CSS3 puro.
+* **ES Modules (ESM) Nativo:** Todo el proyecto usa `"type": "module"`. Prohibido usar `require()` o `module.exports`. Usa siempre `import` y `export` tanto en Node.js como en el navegador (`<script type="module">`).
 
-## 2. Project Context
+## 2. Arquitectura de Directorios Obligatoria
+Respeta esta estructura para cualquier código nuevo:
+* `/src/main`: Core de Electron (`main.js`, `preload.js`, monitor de recursos).
+* `/src/server`: Backend local (`server.js` con Express y Socket.io).
+* `/src/providers`: Los módulos dinámicos de las plataformas (El Framework).
+* `/public/html`: Vistas del usuario (`index.html`, `settings.html`, `dock.html`).
+* `/public/css`: Estilos modulares (`main.css`, `chat.css`).
+* `/public/js`: Lógica del cliente, dividida en `/core`, `/components` y `/utils`.
 
-This project is a Nix-based environment for Firebase Studio, defined by a `.idx/dev.nix` file. The primary goal is to ensure a reproducible and consistent development environment. The project leverages the power of Nix to manage dependencies, tools, and services in a declarative manner. **Note:** This is not a Nix Flake-based environment.
+## 3. Stack de Conexión (Proveedores)
+Cuando trabajes en la conexión a plataformas, usa estas librerías específicas:
+* **Twitch:** `tmi.js` (Conexión IRC directa).
+* **TikTok:** `tiktok-live-connector` (SIEMPRE recordar que requiere inyectar la cookie `sessionid` y forzar `tt-target-idc` para evitar bloqueos).
+* **YouTube:** `youtube-chat` (SIEMPRE recordar que requiere un scraper previo para obtener el `videoId` a partir del `@handle` del canal).
+* **Comunicación Interna:** `socket.io` para enviar eventos del backend (`/src/server`) al frontend (`/public`).
 
-## 3. `dev.nix` Configuration
-
-The `.idx/dev.nix` file is the single source of truth for the development environment. Here are some of the most common configuration options:
-
-### `channel`
-
-The `nixpkgs` channel determines which package versions are available.
-
-```nix
-{ pkgs, ... }: {
-  channel = "stable-24.11"; # or "unstable"
-}
-```
-
-### `packages`
-
-A list of packages to install from the specified channel. You can search for packages on the [NixOS package search](https://search.nixos.org/packages).
-
-```nix
-{ pkgs, ... }: {
-  packages = [
-    pkgs.nodejs_22
-    pkgs.go
-  ];
-}
-```
-
-### `env`
-
-A set of environment variables to define within the workspace.
-
-```nix
-{ pkgs, ... }: {
-  env = {
-    API_KEY = "your-secret-key";
-  };
-}
-```
-
-### `idx.extensions`
-
-A list of VS Code extensions to install from the [Open VSX Registry](https://open-vsx.org/).
-
-```nix
-{ pkgs, ... }: {
-  idx = {
-    extensions = [
-      "vscodevim.vim"
-      "golang.go"
-    ];
-  };
-}
-```
-
-### `idx.workspace`
-
-Workspace lifecycle hooks.
-
-- **`onCreate`:** Runs when a workspace is first created.
-- **`onStart`:** Runs every time the workspace is (re)started.
-
-```nix
-{ pkgs, ... }: {
-  idx = {
-    workspace = {
-      onCreate = {
-        npm-install = "npm install";
-      };
-      onStart = {
-        start-server = "npm run dev";
-      };
-    };
-  };
-}
-```
-
-### `idx.previews`
-
-Configure a web preview for your application. The `$PORT` variable is dynamically assigned.
-
-```nix
-{ pkgs, ... }: {
-  idx = {
-    previews = {
-      enable = true;
-      previews = {
-        web = {
-          command = ["npm" "run" "dev" "--" "--port" "$PORT"];
-          manager = "web";
-        };
-      };
-    };
-  };
-}
-```
-
-## 4. Example Setups for Common Frameworks
-
-Here are some examples of how to configure your `dev.nix` for common languages and frameworks.
-
-### Node.js Web Server
-
-This example sets up a Node.js environment, installs dependencies, and runs a development server with a web preview.
-
-```nix
-{ pkgs, ... }: {
-  packages = [ pkgs.nodejs_22 ];
-  idx = {
-    extensions = [ "dbaeumer.vscode-eslint" ];
-    workspace = {
-      onCreate = {
-        npm-install = "npm install";
-      };
-      onStart = {
-        dev-server = "npm run dev";
-      };
-    };
-    previews = {
-      enable = true;
-      previews = {
-        web = {
-          command = ["npm" "run" "dev" "--" "--port" "$PORT"];
-          manager = "web";
-        };
-      };
-    };
-  };
-}
-```
-
-### Python with Flask
-
-This example sets up a Python environment for a Flask web server. Remember to create a `requirements.txt` file with `Flask` in it.
-
-```nix
-{ pkgs, ... }: {
-  packages = [ pkgs.python3 pkgs.pip ];
-  idx = {
-    extensions = [ "ms-python.python" ];
-    workspace = {
-      onCreate = {
-        pip-install = "pip install -r requirements.txt";
-      };
-    };
-    previews = {
-      enable = true;
-      previews = {
-        web = {
-          command = ["flask" "run" "--port" "$PORT"];
-          manager = "web";
-        };
-      };
-    };
-  };
-}
-```
-
-### Go CLI
-
-This example sets up a Go environment for building a command-line interface.
-
-```nix
-{ pkgs, ... }: {
-  packages = [ pkgs.go ];
-  idx = {
-    extensions = [ "golang.go" ];
-    workspace = {
-      onCreate = {
-        go-mod = "go mod tidy";
-      };
-      onStart = {
-        run-app = "go run .";
-      };
-    };
-  };
-}
-```
-
-## 5. Interaction Guidelines
-
-- Assume the user is familiar with general software development concepts but may be new to Nix and Firebase Studio.
-- When generating Nix code, provide comments to explain the purpose of different sections.
-- Explain the benefits of using `dev.nix` for reproducibility and dependency management.
-- If a request is ambiguous, ask for clarification on the desired tools, libraries, and versions to be included in the environment.
-- When suggesting changes to `dev.nix`, explain the impact of the changes on the development environment and remind the user to reload the environment.
+## 4. Reglas Estrictas de Generación de Código
+* **Cero Pereza (No Lazy Coding):** NUNCA uses placeholders como `// ... el resto del código ...` o `// implementa esto después`. Si te pido modificar una función, devuélveme la función completa y funcional.
+* **Separación de Responsabilidades:** El HTML no debe tener lógica en línea (nada de `onclick=""`). La UI no debe saber cómo se conecta TikTok, solo recibe el evento "nuevo_mensaje".
+* **Idioma:** Variables y funciones en `camelCase` en Inglés (ej. `fetchData`, `messageHandler`). Comentarios y documentación técnicos en Español.
