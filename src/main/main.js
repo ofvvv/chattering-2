@@ -17,18 +17,16 @@ function createWindow() {
     webPreferences: {
       // Adjuntar el script de preload
       preload: path.join(__dirname, 'preload.js'),
-      // Es crucial mantener contextIsolation y deshabilitar nodeIntegration
-      // por seguridad. La comunicación se hará vía preload.
       contextIsolation: true,
       nodeIntegration: false,
     }
   });
 
-  // Cargar el archivo HTML del frontend
-  mainWindow.loadFile(path.join(__dirname, '..', '..', 'public', 'html', 'index.html'));
+  // Cargar la URL del servidor local en lugar de un archivo
+  mainWindow.loadURL('http://localhost:3000');
 
-  // Opcional: Abrir las DevTools para depuración
-  // mainWindow.webContents.openDevTools();
+  // Abrir las DevTools para depuración
+  mainWindow.webContents.openDevTools();
 }
 
 // Este método se llamará cuando Electron haya finalizado
