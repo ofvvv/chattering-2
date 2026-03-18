@@ -16,12 +16,8 @@ const io = new Server(httpServer);
 const PORT = process.env.PORT || 3000;
 
 // Servir archivos estáticos desde la carpeta 'public'
+// Express servirá automáticamente 'index.html' en la ruta '/'
 app.use(express.static(path.join(__dirname, '..', '..', 'public')));
-
-// Ruta para servir el index.html principal
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', '..', 'public', 'html', 'index.html'));
-});
 
 // La función que se pasará como callback a los proveedores.
 // Esta función retransmite el evento a TODOS los frontends conectados.
