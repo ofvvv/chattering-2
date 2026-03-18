@@ -2,54 +2,60 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
-import ProviderManager from '../providers/ProviderManager.js';
 
-// Replicar __dirname en ES Modules
+// Recreamos __dirname para ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, { cors: { origin: '*' } });
 
-const PORT = process.env.PORT || 3000;
+// 1. Configuración de Rutas Estáticas (El arreglo al error de la IA)
+// Le decimos a Express que TODO lo que está en /public es de acceso libre
+const publicPath = path.join(__dirname, '../../public');
+app.use(express.static(publicPath));
 
-// Servir archivos estáticos desde la carpeta 'public'
-// Express servirá automáticamente 'index.html' en la ruta '/'
-app.use(express.static(path.join(__dirname, '..', '..', 'public')));
+// Ruta principal: Redirige directamente al index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(publicPath, 'html/index.html'));
+});
 
-// La función que se pasará como callback a los proveedores.
-// Esta función retransmite el evento a TODOS los frontends conectados.
-const handleProviderEvent = (event) => {
-  console.log('Retransmitiendo evento al frontend:', event);
-  io.emit('chat:message', event);
-};
-
-io.on('connection', (socket) => {
-  console.log('Frontend conectado:', socket.id);
-
-  // Escuchar el evento 'channel:connect' que viene del frontend
-  socket.on('channel:connect', (data) => {
-    const { channel } = data;
-    console.log(`Petición para conectar al canal: ${channel}`);
+// 2. Cargador Dinámico de Providers (El Framework)
+async function loadProviders() {
+    const providersPath = path.join(__dirname, '../providers');
     
-    // Conectamos el proveedor y le pasamos el manejador de eventos.
-    ProviderManager.connectProvider(
-      'twitch',
-      { channel },
-      handleProviderEvent
-    );
-  });
+    // Si la carpeta no existe, la crea para que no crashee
+    if (!fs.existsSync(providersPath)) fs.mkdirSync(providersPath, { recursive: true });
 
-  socket.on('disconnect', () => {
-    console.log('Frontend desconectado:', socket.id);
-  });
-});
+    const files = fs.readdirSync(providersPath).filter(file => file.endsWith('.js'));
+    
+    console.log(`[Framework] Encontrados ${files.length} proveedores.`);
+    
+    for (const file of files) {
+        try {
+            // Importación dinámica (ESM)
+            const module = await import(`../providers/${file}`);
+            if (module.init) {
+                module.init(io); // Le pasamos el socket al proveedor
+                console.log(`[Framework] Proveedor cargado: ${file}`);
+            }
+        } catch (error) {
+            console.error(`[Framework] Error cargando ${file}:`, error);
+        }
+    }
+}
 
+// 3. Inicio del Servidor
+const PORT = 3000;
 httpServer.listen(PORT, async () => {
-  await ProviderManager.loadProviders();
-  console.log(`Servidor Express y Socket.io escuchando en el puerto ${PORT}`);
+    console.log(`🚀 Servidor base corriendo en http://localhost:${PORT}`);
+    await loadProviders();
 });
 
-export { io };
+// Evento de prueba del Socket
+io.on('connection', (socket) => {
+    console.log('🟢 Frontend conectado al socket');
+});

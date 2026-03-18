@@ -12,7 +12,7 @@ Respeta esta estructura para cualquier código nuevo:
 * `/src/main`: Core de Electron (`main.js`, `preload.js`, monitor de recursos).
 * `/src/server`: Backend local (`server.js` con Express y Socket.io).
 * `/src/providers`: Los módulos dinámicos de las plataformas (El Framework).
-* `/public/`: Vistas del usuario (`index.html`, `settings.html`, `dock.html`).
+* `/public/html`: Vistas del usuario (`index.html`, `settings.html`, `dock.html`).
 * `/public/css`: Estilos modulares (`main.css`, `chat.css`).
 * `/public/js`: Lógica del cliente, dividida en `/core`, `/components` y `/utils`.
 
